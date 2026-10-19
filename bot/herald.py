@@ -564,6 +564,8 @@ def main():
                 moddesk.start()
             if bridge:
                 bridge.start()
+            if bugdesk:
+                bugdesk.start()
             if livemarks:
                 livemarks.start()
             if art:
@@ -599,6 +601,16 @@ def main():
             bridge = herald_bridge.install(bot, discord, db, chan, is_staff, gid)
     except ImportError as e:
         print(f"[bridge] World bridge off: {e} (pip install pymysql, and keep herald_bridge.py beside herald.py)")
+
+    # ---------------------------------------------------------------- the bug desk (herald_bugs.py)
+    # Bug reports from the game's bug button -> one #bug-reports forum post each.
+    bugdesk = None
+    try:
+        import herald_bugs
+        if herald_bugs.enabled():
+            bugdesk = herald_bugs.install(bot, discord, chan, gid)
+    except ImportError as e:
+        print(f"[bugs] bug desk off: {e} (pip install pymysql, and keep herald_bugs.py beside herald.py)")
 
     # ---------------------------------------------------------------- in-game LIVE marks (herald_streams.py)
     # Pushes ".wnl livestreamers Name;Name" over SOAP every 5 min from streams.json (tools/streams_fetch.py).
