@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 61051ef055c43c2f132bff735c0ad6fe3c279e46
-subject: Solo page: hide the Azeroth Survivors heading too while the panel is hidden
+commit: 8fcc10b75d6ad07015b4206c6dce7d8d9e8ea950
+subject: Work in progress
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.

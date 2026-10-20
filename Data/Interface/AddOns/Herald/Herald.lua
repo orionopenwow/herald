@@ -8,6 +8,9 @@ The realm decides: self-bot only works where the server owner has set AiPlayerbo
 (Open Vanilla Server and Play Solo do this; Vanilla Remastered when its owner turns it on). Where it's
 off, the panel says so.
 
+Herald Autopilot (the desktop app) can also hand the character over from outside the game: the
+server then says "Enable player ai (Autopilot)" and the app chooses what he does.
+
 /herald            show or hide the panel
 /herald play|stop  hand over / take back
 Written for the 1.12 client's Lua (5.0): no # operator, no string.match.
@@ -25,6 +28,19 @@ local GOALS = {
   { id = "explore", label = "Explore",  tip = "Wanders the world and sees new places.",
     nc = "+explore,+travel,+rpg,+loot,+food,-grind" },
 }
+
+-- Always off on your own character: the bot AI's selling, auction house, mail, bank, guild, crafting,
+-- battleground, duel and chatter habits (its vendor runs would sell even an epic mount), and its
+-- "maintenance" (destroys, disenchants and opens items, abandons quests).
+local SAFE = "-rpg vendor,-rpg bank,-rpg guild,-rpg craft,-rpg bg,-rpg player,-maintenance,-guild,-pvp,-bg,-arena,-lfg,-duel,-start duel,-ads,-ai chat,-say,-emote"
+
+-- In a fight, every goal: never run from a fight he can win. The bot AI's "flee" makes a character
+-- playing alone run as soon as two mobs are on him and he has lost any health (it counts itself as
+-- 100 + its health %, each same-level mob as 100), and running drags him into more mobs; potions
+-- instead. "custom::herald" (realm/classicplus/classicplus_herald_ai.sql) adds the corpses round him
+-- to his loot list before he picks the next fight, so he loots every kill.
+local COMBAT = "-flee,+potions"
+local LOOT = "+custom::herald"
 
 local mod = math.mod or math.fmod
 
@@ -51,6 +67,19 @@ local function goalById(id)
   return GOALS[1]
 end
 
+-- Herald's orders to the bot AI: what to do out of a fight (the goal), how to fight, and loot.
+-- Sent again on login, level-up and every few minutes: the bot AI puts its own defaults (flee back
+-- in) whenever it resets a character's strategies.
+-- (Three short lines: one with everything would pass the client's 255-byte chat limit with a long name.)
+local function orders(id, combatOnly)
+  if not combatOnly then
+    send(".bot cmd " .. me() .. " nc " .. goalById(id).nc .. "," .. SAFE)
+  end
+  -- loot and rest go with every resend, Autopilot runs too: a reset of the bot AI drops them
+  send(".bot cmd " .. me() .. " nc " .. LOOT)
+  send(".bot cmd " .. me() .. " co " .. COMBAT)
+end
+
 local function money(c)
   c = math.floor(c or 0)
   local g = math.floor(c / 10000)
@@ -73,7 +102,7 @@ end
 -- ------------------------------------------------------------------------------------------ panel
 local f = CreateFrame("Frame", "HeraldPanel", UIParent)
 f:SetWidth(250); f:SetHeight(258)
-f:SetPoint("CENTER", UIParent, "CENTER", 300, 60)
+f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -24, -190)   -- under the minimap, on screen at any width
 f:SetFrameStrata("MEDIUM")
 f:SetMovable(true); f:EnableMouse(true)
 f:RegisterForDrag("LeftButton")
@@ -161,9 +190,23 @@ end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- ------------------------------------------------------------------------------------------ logic
+-- What Herald is doing right now, for the panel: fighting, resting (and why), dead, or playing.
+-- Resting matches classicplus_herald_ai.sql: below 70% health or 40% mana he eats, drinks or sits.
+function Herald_Doing()
+  if UnitIsDeadOrGhost("player") then return "on his way back (died)" end
+  if UnitAffectingCombat("player") then return "fighting" end
+  local hp = math.floor(100 * UnitHealth("player") / math.max(1, UnitHealthMax("player")))
+  if hp < 70 then return "resting (health " .. hp .. "%)" end
+  if UnitPowerType("player") == 0 and UnitManaMax("player") > 0 then
+    local mp = math.floor(100 * UnitMana("player") / UnitManaMax("player"))
+    if mp < 40 then return "resting (mana " .. mp .. "%)" end
+  end
+  return "playing"
+end
+
 local function refresh()
   if H.active then
-    status:SetText("|cff5fd77aHerald is playing|r")
+    status:SetText("|cff5fd77aHerald is " .. Herald_Doing() .. "|r")
     big:SetText("Take back control")
   elseif H.available == false then
     status:SetText("|cffee6a5aSelf-bot is off on this realm|r")
@@ -188,7 +231,7 @@ end
 function Herald_SetGoal(id)
   HeraldDB.goal = id
   if H.active then
-    send(".bot cmd " .. me() .. " nc " .. goalById(id).nc)
+    orders(id)
     msg("New goal: " .. goalById(id).label .. ".")
   end
   refresh()
@@ -208,16 +251,24 @@ end
 
 big:SetScript("OnClick", function() if H.active then Herald_Stop() else Herald_Play() end end)
 
-local function started()
+local function started(remote)
   H.active = true
   H.available = true
+  H.remote = remote
   H.started = GetTime()
   H.xp, H.kills, H.deaths, H.money = 0, 0, 0, 0
   H.lastMoney = GetMoney()
   H.lastXP, H.lastMax = UnitXP("player"), UnitXPMax("player")
-  H.pendingGoal = HeraldDB.goal or "level"
-  H.wait = 1.5      -- let the AI finish logging in before the first order
-  msg("Playing " .. me() .. ". Sit back and watch; press Take back control (or /herald stop) any time.")
+  if remote then
+    H.pendingGoal = HeraldDB.goal or "level"   -- Herald Autopilot sends its own plan; this sends only the fight orders
+    H.wait = 2
+    f:Show()
+    msg("Herald Autopilot is playing " .. me() .. ". Press Take back control (or /herald stop) any time.")
+  else
+    H.pendingGoal = HeraldDB.goal or "level"
+    H.wait = 1.5      -- let the AI finish logging in before the first order
+    msg("Playing " .. me() .. ". Sit back and watch; press Take back control (or /herald stop) any time.")
+  end
 end
 
 local function stopped(text)
@@ -236,17 +287,22 @@ ev:RegisterEvent("PLAYER_XP_UPDATE")
 ev:RegisterEvent("PLAYER_MONEY")
 ev:RegisterEvent("PLAYER_DEAD")
 ev:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
+ev:RegisterEvent("PLAYER_LEVEL_UP")
 ev:SetScript("OnEvent", function()
   local e, a1 = event, arg1
   if e == "VARIABLES_LOADED" then
     HeraldDB.goal = HeraldDB.goal or "level"
     refresh()
   elseif e == "PLAYER_ENTERING_WORLD" then
-    H.active = false      -- self-bot ends with the session (unless the realm keeps it on login)
+    -- Also fires after every loading screen (a flight into another continent, a dungeon), where
+    -- Herald keeps playing: give him his orders again once the new place has loaded.
+    if H.active then H.pendingGoal = HeraldDB.goal or "level"; H.wait = 3 end
     refresh()
+  elseif e == "PLAYER_LEVEL_UP" and H.active then
+    H.pendingGoal = HeraldDB.goal or "level"; H.wait = 2
   elseif e == "CHAT_MSG_SYSTEM" and a1 then
     if string.find(a1, "Enable player ai", 1, true) then
-      started()
+      started(string.find(a1, "(Autopilot)", 1, true) and true or false)
     elseif string.find(a1, "Disable player ai", 1, true) then
       stopped()
     elseif string.find(a1, "Self-bot is disabled", 1, true) or string.find(a1, "permission to enable player ai", 1, true) then
@@ -275,15 +331,52 @@ ev:SetScript("OnEvent", function()
   end
 end)
 
+-- Watchdog: if Herald stands in one spot for two minutes (not fighting, not dead), he is stuck on
+-- terrain or a path: ask the bot AI to get unstuck and give it the goal again.
+local WATCH_EVERY, STUCK_AFTER = 30, 120
+local watchT, stillFor, lastX, lastY = 0, 0, nil, nil
+local function watchdog(dt)
+  if not H.active then watchT, stillFor, lastX = 0, 0, nil return end
+  watchT = watchT + dt
+  if watchT < WATCH_EVERY then return end
+  watchT = 0
+  local x, y = GetPlayerMapPosition("player")
+  if not x or (x == 0 and y == 0) then return end
+  -- resting (below 70% health or 40% mana: classicplus_herald_ai.sql sits him down) isn't stuck
+  local hp = UnitHealth("player") / math.max(1, UnitHealthMax("player"))
+  local mp = UnitManaMax("player") > 0 and UnitMana("player") / UnitManaMax("player") or 1
+  local resting = (hp < 0.7 or (UnitPowerType("player") == 0 and mp < 0.4))
+  local busy = UnitAffectingCombat("player") or UnitIsDeadOrGhost("player") or resting
+  if lastX and not busy and math.abs(x - lastX) < 0.0005 and math.abs(y - lastY) < 0.0005 then
+    stillFor = stillFor + WATCH_EVERY
+  else
+    stillFor = 0
+  end
+  lastX, lastY = x, y
+  if stillFor >= STUCK_AFTER then
+    stillFor = 0
+    H.unstucks = (H.unstucks or 0) + 1
+    send(".bot do " .. me() .. " unstuck")
+    if not H.remote then H.pendingGoal = HeraldDB.goal or "level"; H.wait = 3 end
+    msg("Herald was standing still; getting him unstuck.")
+  end
+end
+
+local REORDER_EVERY = 300
 local tick = 0
 ev:SetScript("OnUpdate", function()
   local dt = arg1 or 0.1
+  watchdog(dt)
   if H.pendingGoal then
     H.wait = H.wait - dt
     if H.wait <= 0 then
-      send(".bot cmd " .. me() .. " nc " .. goalById(H.pendingGoal).nc)
+      orders(H.pendingGoal, H.remote)
       H.pendingGoal = nil
     end
+  end
+  if H.active and not H.pendingGoal then
+    H.reorder = (H.reorder or 0) + dt
+    if H.reorder >= REORDER_EVERY then H.reorder = 0; orders(HeraldDB.goal or "level", H.remote) end
   end
   tick = tick + dt
   if tick > 1 then

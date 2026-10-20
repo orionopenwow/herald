@@ -14,7 +14,7 @@ python autopilot/herald_autopilot.py --realm https://play.openvanilla.app
 
 The simplest way, and the one that works everywhere the realm allows it:
 
-1. Log in to your character in the game (the Open Vanilla client, the browser, or a stock 1.12 client
+1. Log in to your character in the game (the Open Vanilla client, the browser, or a stock Vanilla client
    with the Classic+ addons).
 2. Click **Herald** by the minimap (or type `/herald`) and press **Let Herald play**. Pick what he
    does: Level up, Quest, Gather or Explore.
@@ -24,7 +24,20 @@ The simplest way, and the one that works everywhere the realm allows it:
 The realm owner decides: it needs `AiPlayerbot.SelfBotLevel = 2`. Open Vanilla Server and Play Solo set
 it (Open Vanilla Server: `"herald_selfbot": false` in server_settings.json turns it off). On Vanilla
 Remastered: `bash hetzner/herald_selfbot.sh on`. Herald Autopilot (this program) can then change his
-goal from the desktop through `bot/herald_autopilot_api.py` (`.bot cmd <name> nc <strategies>`).
+goal from the desktop through `bot/herald_autopilot_api.py` (`.rndbot cmd <name> nc <strategies>` over the console).
+
+### How Herald fights and loots
+
+Whatever the goal, Herald gives the bot AI the same fight orders (the addon on login, every level-up
+and every five minutes; the API after every start and resume):
+
+- **No running from two mobs** (`co -flee,+potions`). The bot AI's own "flee" makes a character playing
+  alone run as soon as two same-level mobs are on it and it has lost any health, which drags it into
+  more mobs. Herald fights it out and drinks a healing potion if he has one.
+- **Loots every kill** (`nc +custom::herald`, `realm/classicplus/classicplus_herald_ai.sql`): the corpses
+  around him go on his loot list before he picks the next fight.
+- **Doesn't pull into packs** (world server patch `realm/mangos/0016`): playing solo he skips a mob with
+  two or more idle, aggressive mobs within 12 yards (three for a quest mob) and prefers lone mobs.
 
 ## Where it can play
 
@@ -36,7 +49,7 @@ Pick the realm in **Settings**:
 |---|---|---|
 | **Demo (offline)** | A small simulated Elwynn Forest (`ap_link.DemoLink`) | Works now. Good for trying it, tests and screenshots. |
 | **Herald Lite (a bot account)** | `devkit/heraldlite`'s autopilot, a headless client that logs a **bot account** in and plays a `tools/autopilot` route | Works once Herald Lite is built (`cargo build --release` in `devkit/heraldlite`). It plays only on `play.openvanilla.app`, `staging.openvanilla.app`, `127.0.0.1`, `localhost`, `*.test` and `*.localhost`. The binary hard-codes this list and the program checks it too. |
-| **Vanilla Remastered / another realm** | The realm's own bot AI, through `bot/herald_autopilot_api.py` | The realm has to turn autoplay on (`AUTOPILOT_ALLOWED=1`) and needs the world-server command `.wnl autopilot`. That command isn't written yet (see *What's next*), so autoplay is off on the live realm for now. Learning works either way. |
+| **Vanilla Remastered / another realm** | The realm's own bot AI, through `bot/herald_autopilot_api.py` | The realm turns it on with `hetzner/herald_selfbot.sh on` (`AiPlayerbot.SelfBotLevel = 2` and `AUTOPILOT_ALLOWED=1`). START hands the online character to the realm's bot AI from the server (`.wnl autopilot <name> on`, realm/mangos 0015), then drives it with `.rndbot cmd <name> nc <strategies>`; STOP gives it back. The player watches in game and can take control back from the Herald panel. Selling, the auction house, mail, bank, guild, PvP and chat are always off on a player's character. |
 
 ## The window
 
@@ -101,7 +114,7 @@ It is data, checked against the rule list, never code.
 | `herald_autopilot.py` | the window (Tk) |
 | `ap_core.py` | goals, rules, class defaults, a run's numbers |
 | `ap_link.py` | `DemoLink`, `HeraldLiteLink`, `RealmLink` |
-| `ap_sim.py` | the 1.12 damage simulator |
+| `ap_sim.py` | the Vanilla damage simulator |
 | `ap_learn.py` | the opt-in learner: queue, batches, upload timing, profile download |
 | `ap_art.py` | the window's art: the rounded frame, glass panels, icons, map (`python autopilot/ap_art.py` rebuilds `assets/ui/`) |
 | `ap_kit.py` | pieces cut from the Herald UI kit sheet (`assets/kit/herald_kit_sheet.png`): corner flourishes, close/minimise, nav bars, the START/STOP button, plaques, toggles, checkboxes |
@@ -118,11 +131,9 @@ xvfb-run -s "-screen 0 1280x800x24" python tests/ui_autopilot_realm_smoke.py out
 
 ## What's next
 
-1. **The world-server command.** `.wnl autopilot <name> on <strategies> | off | pause | resume`.
-   It hands an online player's character to the playerbot AI (cmangos/playerbots' self-bot) and
-   shows the `[Autopilot]` tag. Until it exists, the API's `AUTOPILOT_CMD_*` templates can point
-   at whatever the core offers.
-2. **Positions and bags from the realm.** The API currently reports level, XP and money. The map
-   and bags light up once it also reports position and bag contents.
+1. **A visible tag.** Other players can't yet see that a character is on Autopilot (`[Autopilot]`).
+2. **The map outside Elwynn Forest.** The API reports the zone, bags and quest log everywhere, and a
+   map point in Elwynn Forest (the one zone map the app has). The character table is saved every few
+   minutes, so these lag a little behind the game.
 3. **More Herald Lite routes and classes** (`tools/autopilot`). The first route is Northshire for
    a Human Hunter.

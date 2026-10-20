@@ -19,8 +19,8 @@ Optional: an officer can link a guild's chat to another Discord channel the same
 
 | Piece | File | What |
 |---|---|---|
-| World server | `realm/mangos/pending/0007-openvanilla-world-channel.patch` (`OpenVanilla/World.h/.cpp`) | the channel, `/world`/`.world`, the log, `.wnl worldsay`, `.wnl worldoff/worldon`, guild links |
-| Tables | `realm/classicplus/pending/classicplus_world.sql` | `openvanilla_world_log`, `openvanilla_world_pref`, `openvanilla_guild_bridge`, `openvanilla_guild_link_code` |
+| World server | `realm/mangos/0007-openvanilla-world-channel.patch` (`OpenVanilla/World.h/.cpp`) | the channel, `/world`/`.world`, the log, `.wnl worldsay`, `.wnl worldoff/worldon`, guild links |
+| Tables | `realm/classicplus/classicplus_world.sql` | `openvanilla_world_log`, `openvanilla_world_pref`, `openvanilla_guild_bridge`, `openvanilla_guild_link_code` |
 | Herald | `bot/herald_bridge.py`, hooked from `bot/herald.py` | both directions, `/bridge` and `/guild` slash commands |
 | Chat addon | `Data/Interface/AddOns/Chat/World.lua` | the World tab, `[W]`, `[D]` lines, channel cycle, `/world`, settings |
 | Grants | `hetzner/herald_up.sh` | Herald's database login may edit the guild link tables |
@@ -63,6 +63,36 @@ posted (`bridge_state` in its SQLite), so a restart carries on where it stopped.
 | `BRIDGE_ROLE` | `Adventurer` | who may talk into the game (the old `Player` role counts too); staff always may |
 | `SUPPORT_DB_*`, `CHARACTERS_DATABASE` | from `herald_up.sh` | the characters database |
 | `SOAP_URL`, `SOAP_USER`, `SOAP_PASS` | from `herald_up.sh` | the world server's console |
+
+## Check it works (after each realm update)
+
+On the server, as root, once `dev\Server.bat` 1 and `bash hetzner/herald_up.sh` have run:
+
+    bash /opt/openvanilla-classicplus/repo/hetzner/world_chat_check.sh
+
+Herald Lite logs in on the live realm (`devkit/heraldlite/scenarios/world_chat.txt`): it must be in World
+(`.wnl worldon` answers `WO 1`), its World line (with a fresh nonce) must come back to it, and one bug report
+must be taken (`BG ok`). Then the script checks the database (`openvanilla_world_log`, `openvanilla_bug_report`)
+and Herald: within 60 s the report is marked posted (it is in #bug-reports) and the bridge has read past the
+World line (it is in #world). Each check prints PASS or FAIL with where to look; the exit code is 1 if any failed.
+Both Discord posts say "Herald test, please ignore". Needs Herald Lite built
+(`bash devkit/staging/staging_up.sh build-heraldlite`) and `/opt/wenilla-realm/heraldlite.env` with a **live**
+login (`HL_WEB=https://play.openvanilla.app`, `HL_USER`, `HL_PASS`, `chmod 600`). One run a minute at most:
+the bug button allows one report a minute per account.
+
+### When Discord lines don't reach the game
+
+Herald marks every #world message it could not relay:
+
+* ⚠ the world server refused it. `/bridge status` (staff) says why, and Herald's log has `[bridge] Discord -> game: ...`.
+  Usually Herald's console account (HELPDESK) is gone or has another password, for example after a fresh or
+  restored realm database: run `bash hetzner/herald_up.sh` on the server (it now puts HELPDESK back with the
+  password from `/etc/openvanilla-herald.env` on every run), then `systemctl restart openvanilla-herald`.
+  At start Herald also tries the console once and logs `[bridge] Discord -> game is OFF: ...` if it can't.
+* 🔒 the member doesn't have the Adventurer role (BRIDGE_ROLE) yet: their lines stay on Discord (once an hour per member).
+* ⏳ too fast (per-member rate limit).
+
+In game, Discord lines show in the **World** tab (it gets an unread dot), not in General, unless the World tab is hidden.
 
 ## What players see
 
