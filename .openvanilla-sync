@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 5aa66b85d2d859705eacbd262fc55159a3df1c3e
-subject: Realm patch 0031: Hero IDs, the public half of a Hero Key
+commit: 6e3d3b02bb9e5e1dcdb8993e302eb2ea7f24b181
+subject: Release 1.32.0
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
