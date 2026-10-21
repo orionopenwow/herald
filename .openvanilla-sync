@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 61043afb181aa357bca735cda2893c6d601b278f
-subject: a
+commit: be17c5ea697427073bdfea6471d3ae03e2507c50
+subject: Release 1.34.0
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
