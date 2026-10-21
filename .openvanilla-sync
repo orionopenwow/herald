@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 4e0c2c243475070f60a5114725dbd7d953f5fac2
-subject: Meters "Window.lua:31: ROW_X (a nil value)": stale addon files on Warfront and Duels, and in the Workshop
+commit: 1360266ab8f69cd2ecef2b8d0734a01806f7a257
+subject: Players' reports #20-#24: target health number, buff durations, menus on screen, walking over windows, Quest Log button
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
