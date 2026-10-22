@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 4ed821672035f69f25c23293d24a952c912fbbc7
-subject: duels_up.sh: declare the live game data volume as external in the override
+commit: c506b6ca293e58e5270abe8f2e440cb577414a30
+subject: duels_up.sh: SQL as the world server's database user; start and update skip db-init
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
