@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: a7fd21bf0b437d792ed6f1592299d4670170554d
-subject: duels_up.sh: the Duels web service reaches its own database, console and game servers by names only its stack has
+commit: f4d309008326bbccb6f7f1546ad384c8278403ea
+subject: Release 1.40.0
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
