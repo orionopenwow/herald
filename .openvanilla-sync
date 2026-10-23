@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 4e717e7bff6810c7a9115f44c9e8b14e657d660c
-subject: Duels: offer only the race/class pairs its world server can make
+commit: e11f02fd653b0ce307f9ffb326b024d6d8e25cbb
+subject: duels_up.sh: put back Duels Lite and everything 4e717e7 overwrote; keep only its combos.json mount
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
