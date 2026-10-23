@@ -1,5 +1,5 @@
 source: Open Vanilla
-commit: 889290ee7a8c5f5d5f1166f72c1bb74783a4f5c2
-subject: Release 1.41.0
+commit: 4e717e7bff6810c7a9115f44c9e8b14e657d660c
+subject: Duels: offer only the race/class pairs its world server can make
 paths: bot, autopilot, tools/autopilot, tools/botlab, tools/gen_herald_art.py, Data/Interface/AddOns/Herald, Herald Autopilot.bat, docs/HERALD.md, docs/DISCORD_BRIDGE.md, docs/img/herald.jpg, docs/img/herald_autopilot.jpg, packaging/workflows/owbot.yml
 Made by dev/sync_repos.py. Edit the source, not this copy.
